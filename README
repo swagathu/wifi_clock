@@ -1,0 +1,3 @@
+This is a simple clock app for your dailly use.
+It should support minimum components.
+You shoul be able to build using docker as well as direct build.sh call should work.

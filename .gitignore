@@ -1,0 +1,12 @@
+build/
+.ccache
+bin
+
+#ignore Eclipse project files
+.cproject
+.project
+.settings/
+
+# ignore VS Code files
+.vscode/**
+
