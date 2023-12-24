@@ -9,4 +9,4 @@ bin
 
 # ignore VS Code files
 .vscode/**
-
+./nodemcu-firmware/site
