@@ -22,7 +22,8 @@ local conn_fail = 0
 -- -- 2 minute timer. limit connection tris to stop after 2 minutes.
 local connintr_timer = tmr.create()
 connintr_timer:register(1000 * 60 * 2, tmr.ALARM_SINGLE, function ()
-    conn_fail = 1
+    show_conn_in_progress("conn timeout", 1)
+    GLOBAL_CONNECTED = -1
 end)
 connintr_timer:start()
 
@@ -74,4 +75,3 @@ else
     end
 end
 
-connintr_timer:stop()

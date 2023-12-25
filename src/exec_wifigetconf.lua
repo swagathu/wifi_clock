@@ -11,7 +11,8 @@ if not file_exists then
             password = def_pass
         },
         networks = {
-            { ssid = def_ssid, password = def_pass }
+            { ssid = def_ssid, password = def_pass },
+            { ssid = "POCOF4", password = "ganeshsw"}
             -- Add more default networks as needed
         }
     }
