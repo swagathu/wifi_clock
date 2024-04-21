@@ -6,7 +6,7 @@ HEAD_SCROLL_1=0
 
 function show_data()
     local text = "Hello World"
-    if (GLOBAL_CONNECTED  ~= 0)
+    if (GLOBAL_CONNECTED  > 0)
     then
         displib.clrscr()
         HEAD_SCROLL_1 = displib.display_scrolling(0, 3, text, 11, HEAD_SCROLL_1);

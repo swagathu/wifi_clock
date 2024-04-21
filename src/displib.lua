@@ -230,7 +230,7 @@ function displib.display_scrolling(row, col, text, disp_len, head)
     local ret = ""
     text = text.." "
     local text_len = string.len(text)
-    print(row, col, text, disp_len, head)
+    -- print(row, col, text, disp_len, head)
     if (string.len(text) > (disp_len + 1))
     then
         local shift_text = displib.shift_n_times(text, head);
@@ -243,7 +243,7 @@ function displib.display_scrolling(row, col, text, disp_len, head)
     else
         ret = text
     end
-    print(ret)
+    -- print(ret)
     displib.lcd_data(ret)
     return head
 end

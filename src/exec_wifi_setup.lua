@@ -1,5 +1,6 @@
 local displib = require("displib")
-
+local timeoutTimer = tmr.create()
+local TIMEOUT_DURATION = 10000         -- Adjust timeout duration as needed (in milliseconds)
 -- assume lcd inited in main lua
 
 -- display a connecting print
@@ -17,61 +18,139 @@ end
 
 show_conn_in_progress("Connecting...", 0)
 
+-- get the config from flash
+dofile("exec_wifigetconf.lua")
+
 -- limit the time spend for connecting.
-local conn_fail = 0
--- -- 2 minute timer. limit connection tris to stop after 2 minutes.
+
+-- -- 2 minute timer. limit connection tries to stop after 2 minutes.
 local connintr_timer = tmr.create()
 connintr_timer:register(1000 * 60 * 2, tmr.ALARM_SINGLE, function ()
     show_conn_in_progress("conn timeout", 1)
+    timeoutTimer:stop()
     GLOBAL_CONNECTED = -1
+    dofile("exec_wifi_setup.lua")
 end)
 connintr_timer:start()
 
--- get the config from flash
-local decoded_data = dofile("exec_wifigetconf.lua")
+local num_of_conns = 1
+local curSSID = ""
+local curPWD = ""
+
+-- local function  checkConnCallback()
+--     if wifi.sta.getip() then
+--         print("Connected to network:", curSSID)
+--         show_conn_in_progress("Connected", 1)
+--         GLOBAL_CONNECTED = 1
+--         connintr_timer:stop()
+--         return 1
+--     else
+--         return 0
+--     end
+-- end
+
+-- local connChecktmr = tmr.create()
+--         local timertime = 1000 -- Adjust timeout duration as needed (in milliseconds)
+--         connChecktmr:alarm(timertime, tmr.ALARM_AUTO, function()
+--             if (checkConnCallback() == 1)
+--             then
+--                 connChecktmr:stop()
+--             end
+--         end)
+-- connChecktmr:start()
+
+local function onConnection()
+    show_conn_in_progress("Connected", 1)
+    timeoutTimer:stop()
+end
+
+local function onIPGot()
+    if wifi.sta.getip()
+    then
+        print("Connected to network:", curSSID)
+        show_conn_in_progress("Got IP", 1)
+        DECODED_DATA.lastConnected.ssid = curSSID
+        DECODED_DATA.lastConnected.password = curPWD
+        -- write to config.
+        dofile("exec_wifisetconf.lua")
+        GLOBAL_CONNECTED = 1
+        wifi.sta.autoconnect(1)
+        return
+    end
+end
+
+local function onConnectionTimeout()
+    if wifi.sta.getip()
+    then
+        return
+    else
+        show_conn_in_progress("conn timeout", 1)
+        print("Failed to connect to network:", curSSID)
+        show_conn_in_progress("Try diff net", 1)
+    end
+end
 
 local station_cfg={}
-station_cfg.ssid = decoded_data.lastConnected.ssid
-station_cfg.pwd = decoded_data.lastConnected.password
+-- function to set next network
+local function try_conn()
+    if ((num_of_conns <= #DECODED_DATA.networks))
+    then
+        if (GLOBAL_CONNECTED == -1 or GLOBAL_CONNECTED == 1)
+        then
+            return
+        end
+        print(sjson.encode(DECODED_DATA))
+        print("value", num_of_conns)
+        curSSID = DECODED_DATA.networks[num_of_conns].ssid
+        curPWD = DECODED_DATA.networks[num_of_conns].password
+        station_cfg.ssid = curSSID
+        station_cfg.pwd = curPWD
+        station_cfg.save = false
+        print("Try "..curSSID.."")
+        show_conn_in_progress("Try "..curSSID.."",1)
+        wifi.sta.config(station_cfg)
+        wifi.sta.connect()
+
+        timeoutTimer:alarm(TIMEOUT_DURATION, tmr.ALARM_SINGLE, function()
+            onConnectionTimeout()
+            try_conn()
+        end)
+        timeoutTimer:start()
+        num_of_conns = num_of_conns + 1
+    else
+        -- connChecktmr:stop()
+        GLOBAL_CONNECTED = -1
+    end
+end
+
+local function onDisconnect()
+    dofile("exec_wifi_setup.lua")
+end
+
+-- set wifi callbacks
+wifi.eventmon.register(wifi.eventmon.STA_CONNECTED, onConnection)
+-- wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, onDisconnect)
+wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, onIPGot)
+
+
+station_cfg.ssid = DECODED_DATA.lastConnected.ssid
+station_cfg.pwd = DECODED_DATA.lastConnected.password
 station_cfg.save = false
+curSSID = DECODED_DATA.lastConnected.ssid
+curPWD = DECODED_DATA.lastConnected.password
 
 -- Connect to the last connected network
 wifi.setmode(wifi.STATION)
 wifi.sta.config(station_cfg)
-wifi.sta.autoconnect(1)
+-- enable auto connect once a connection is done.
+wifi.sta.autoconnect(0)
+wifi.sta.connect()
 
--- Check if already connected
-if wifi.sta.getip() then
-    print("Connected to last connected network:", decoded_data.lastConnected.ssid)
-    show_conn_in_progress("prev conn ok", 1)
-    GLOBAL_CONNECTED = 1
-else
-    print("Failed to connect to last connected network. Trying other networks...")
-    show_conn_in_progress("prev net fail", 1)
-    -- Try connecting to other networks from the list
-    for _, network in ipairs(decoded_data.networks) do
-        station_cfg.ssid = network.ssid
-        station_cfg.pwd = network.password
-        station_cfg.save = false
-        wifi.sta.config(station_cfg)
-        wifi.sta.connect()
+timeoutTimer:stop()
 
-        -- Wait for connection
-        tmr.create():alarm(10000, tmr.ALARM_SINGLE, function()
-            if wifi.sta.getip() then
-                print("Connected to network:", network.ssid)
-                show_conn_in_progress("Connected", 1)
-                GLOBAL_CONNECTED = 1
-            else
-                print("Failed to connect to network:", network.ssid)
-                show_conn_in_progress("Try diff net", 1)
-            end
-        end)
-        if (conn_fail == 1)
-        then
-            GLOBAL_CONNECTED =-1
-            break
-        end
-    end
-end
+timeoutTimer:alarm(TIMEOUT_DURATION, tmr.ALARM_SINGLE, function()
+    onConnectionTimeout()
+    try_conn()
+end)
 
+timeoutTimer:start()
