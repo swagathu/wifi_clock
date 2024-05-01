@@ -1,0 +1,1 @@
+python .\nodemcu-firmware\tools\toolchains\esptool.py erase_flash --port COM9 --baud 115200 write_flash --flash_mode dio -fs 4MB --flash_freq 40m 0x00000 .\nodemcu-firmware\bin\0x00000.bin 0x10000 .\nodemcu-firmware\bin\0x10000.bin

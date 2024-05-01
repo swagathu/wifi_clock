@@ -1,6 +1,6 @@
-local displib = require("displib")
+-- local displib = require("displib")
 local timeoutTimer = tmr.create()
-local TIMEOUT_DURATION = 10000         -- Adjust timeout duration as needed (in milliseconds)
+local TIMEOUT_DURATION = 15000         -- Adjust timeout duration as needed (in milliseconds)
 -- assume lcd inited in main lua
 
 -- display a connecting print
@@ -22,10 +22,9 @@ show_conn_in_progress("Connecting...", 0)
 dofile("exec_wifigetconf.lua")
 
 -- limit the time spend for connecting.
-
 -- -- 2 minute timer. limit connection tries to stop after 2 minutes.
 local connintr_timer = tmr.create()
-connintr_timer:register(1000 * 60 * 2, tmr.ALARM_SINGLE, function ()
+connintr_timer:register(1000 * 60 * 3, tmr.ALARM_SINGLE, function ()
     show_conn_in_progress("conn timeout", 1)
     timeoutTimer:stop()
     GLOBAL_CONNECTED = -1
@@ -37,37 +36,19 @@ local num_of_conns = 1
 local curSSID = ""
 local curPWD = ""
 
--- local function  checkConnCallback()
---     if wifi.sta.getip() then
---         print("Connected to network:", curSSID)
---         show_conn_in_progress("Connected", 1)
---         GLOBAL_CONNECTED = 1
---         connintr_timer:stop()
---         return 1
---     else
---         return 0
---     end
--- end
-
--- local connChecktmr = tmr.create()
---         local timertime = 1000 -- Adjust timeout duration as needed (in milliseconds)
---         connChecktmr:alarm(timertime, tmr.ALARM_AUTO, function()
---             if (checkConnCallback() == 1)
---             then
---                 connChecktmr:stop()
---             end
---         end)
--- connChecktmr:start()
-
 local function onConnection()
     show_conn_in_progress("Connected", 1)
     timeoutTimer:stop()
 end
 
+local function onDisconnect()
+    wifi.eventmon.unregister(wifi.eventmon.STA_DISCONNECTED)
+    dofile("exec_wifi_setup.lua")
+end
+
 local function onIPGot()
     if wifi.sta.getip()
     then
-        print("Connected to network:", curSSID)
         show_conn_in_progress("Got IP", 1)
         DECODED_DATA.lastConnected.ssid = curSSID
         DECODED_DATA.lastConnected.password = curPWD
@@ -75,6 +56,9 @@ local function onIPGot()
         dofile("exec_wifisetconf.lua")
         GLOBAL_CONNECTED = 1
         wifi.sta.autoconnect(1)
+        wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, onDisconnect)
+        -- get weather
+        connintr_timer:stop()
         return
     end
 end
@@ -93,7 +77,9 @@ end
 local station_cfg={}
 -- function to set next network
 local function try_conn()
-    if ((num_of_conns <= #DECODED_DATA.networks))
+    print(WIFI_DATA.conn_list_len)
+    print(num_of_conns)
+    if ((num_of_conns <= WIFI_DATA.conn_list_len))
     then
         if (GLOBAL_CONNECTED == -1 or GLOBAL_CONNECTED == 1)
         then
@@ -118,18 +104,12 @@ local function try_conn()
         timeoutTimer:start()
         num_of_conns = num_of_conns + 1
     else
-        -- connChecktmr:stop()
         GLOBAL_CONNECTED = -1
     end
 end
 
-local function onDisconnect()
-    dofile("exec_wifi_setup.lua")
-end
-
 -- set wifi callbacks
 wifi.eventmon.register(wifi.eventmon.STA_CONNECTED, onConnection)
--- wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, onDisconnect)
 wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, onIPGot)
 
 

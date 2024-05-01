@@ -148,54 +148,8 @@ function displib.lcd_loc( row, pos)
 end
 
 function displib.monthlist(cmd)
-    if (cmd == 1)
-    then
-        return "Jan"
-    end
-    if (cmd == 2)
-    then
-        return "Feb"
-    end
-    if (cmd == 3)
-    then
-        return "Mar"
-    end
-    if (cmd == 4)
-    then
-        return "Apr"
-    end
-    if (cmd == 5)
-    then
-        return "May"
-    end
-    if (cmd == 6)
-    then
-        return "Jun"
-    end
-    if (cmd == 7)
-    then
-        return "Jul"
-    end
-    if (cmd == 8)
-    then
-        return "Aug"
-    end
-    if (cmd == 9)
-    then
-        return "Sep"
-    end
-    if (cmd == 10)
-    then
-        return "Oct"
-    end
-    if (cmd == 11)
-    then
-        return "Nov"
-    end
-    if (cmd == 12)
-    then
-        return "Dec"
-    end
+    local mlist = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+    return mlist[cmd]
 end
 
 -----------------------------------
