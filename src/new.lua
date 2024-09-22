@@ -40,6 +40,16 @@ wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, function()
                     else
                         sck:send("Error: File not found")
                     end
+                elseif request.query == "set_config" then
+                    -- Save the payload to network_data.json
+                    local file = file.open("network_data.json", "w+")
+                    if file then
+                        file.write(request.payload)
+                        file.close()
+                        sck:send("Success: Configuration updated")
+                    else
+                        sck:send("Error: Could not open file for writing")
+                    end
                 else
                     sck:send("Error: Unknown query")
                 end
