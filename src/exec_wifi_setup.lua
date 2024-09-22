@@ -54,6 +54,9 @@ local function onIPGot()
         DECODED_DATA.lastConnected.password = curPWD
         -- write to config.
         dofile("exec_wifisetconf.lua")
+        show_conn_in_progress("start serv:", 0)
+        show_conn_in_progress(wifi.sta.getip(), 1)
+        dofile("serv.lua")
         GLOBAL_CONNECTED = 1
         wifi.sta.autoconnect(1)
         wifi.eventmon.register(wifi.eventmon.STA_DISCONNECTED, onDisconnect)
@@ -116,12 +119,18 @@ wifi.eventmon.register(wifi.eventmon.STA_GOT_IP, onIPGot)
 station_cfg.ssid = DECODED_DATA.lastConnected.ssid
 station_cfg.pwd = DECODED_DATA.lastConnected.password
 station_cfg.save = false
+
+ap_cfg = {}
+ap_cfg.ssid = "wificlock"
+ap_cfg.auth = wifi.OPEN
+
 curSSID = DECODED_DATA.lastConnected.ssid
 curPWD = DECODED_DATA.lastConnected.password
 
 -- Connect to the last connected network
 wifi.setmode(wifi.STATION)
 wifi.sta.config(station_cfg)
+wifi.ap.config(ap_cfg)
 -- enable auto connect once a connection is done.
 wifi.sta.autoconnect(0)
 wifi.sta.connect()

@@ -16,8 +16,8 @@ local function display_weather_internal()
     local key = "add your api key"
     if (WEATHER_DATA.cord_lat == "")
     then
-        WEATHER_DATA.cord_lat = "10"
-        WEATHER_DATA.cord_long = "10"
+        WEATHER_DATA.cord_lat = DECODED_DATA.location.latitude
+        WEATHER_DATA.cord_long = DECODED_DATA.location.longitude
     end
     http.request("http://api.weatherapi.com/v1/current.json?key="..key.."&q="..WEATHER_DATA.cord_lat..","..WEATHER_DATA.cord_long.."&aqi=no", "GET", nil, nil, decode_weather)
 end

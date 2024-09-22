@@ -14,6 +14,10 @@ if not file_check then
             { ssid = "default", password = "default"},
             { ssid = "default", password = "default"}
             -- Add more default networks as needed
+        },
+        ["location"] ={
+            longitude = "10",
+            latitude = "10"
         }
     }
 
@@ -76,3 +80,5 @@ print("Last connected:")
 print("SSID: " .. DECODED_DATA.lastConnected.ssid)
 print("Password: " .. DECODED_DATA.lastConnected.password)
 print("no. of nets:" .. WIFI_DATA.conn_list_len .. "")
+print("latitude:" .. DECODED_DATA.location.latitude)
+print("longitude:" .. DECODED_DATA.location.longitude)
